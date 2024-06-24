@@ -18,5 +18,5 @@ type Bid struct {
 type BidStorer interface {
 	SaveBid(bid Bid) error
 	GetBid(bidder Bidder) (Bid, error)
-	GetAllBids() ([]Bid, error)
+	GetAllBids() (map[Bidder]Bid, error)
 }

@@ -39,12 +39,8 @@ func (m MemoryStorage) GetBid(bidder Bidder) (Bid, error) {
 }
 
 // Maybe turn this into an iterator later
-func (m MemoryStorage) GetAllBids() ([]Bid, error) {
+func (m MemoryStorage) GetAllBids() (map[Bidder]Bid, error) {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
-	var bids []Bid
-	for _, bid := range m.bids {
-		bids = append(bids, bid)
-	}
-	return bids, nil
+	return m.bids, nil
 }
