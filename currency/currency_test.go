@@ -30,28 +30,20 @@ func TestAmount_Add(t *testing.T) {
 
 func TestAmount_Sub(t *testing.T) {
 	type testCase struct {
-		name        string
-		a1          Amount
-		a2          Amount
-		expected    Amount
-		shouldError bool
+		name     string
+		a1       Amount
+		a2       Amount
+		expected Amount
 	}
 	testCases := []testCase{
-		{"Zero", Amount{Dollars: 0, Cents: 0}, Amount{Dollars: 0, Cents: 0}, Amount{Dollars: 0, Cents: 0}, false},
-		{"SubZero", Amount{Dollars: 1, Cents: 55}, Amount{Dollars: 0, Cents: 0}, Amount{Dollars: 1, Cents: 55}, false},
-		{"Simple", Amount{Dollars: 1, Cents: 00}, Amount{Dollars: 0, Cents: 29}, Amount{Dollars: 0, Cents: 71}, false},
-		{"CentRollover", Amount{Dollars: 1, Cents: 99}, Amount{Dollars: 5, Cents: 2}, Amount{}, true},
+		{"Zero", Amount{Dollars: 0, Cents: 0}, Amount{Dollars: 0, Cents: 0}, Amount{Dollars: 0, Cents: 0}},
+		{"SubZero", Amount{Dollars: 1, Cents: 55}, Amount{Dollars: 0, Cents: 0}, Amount{Dollars: 1, Cents: 55}},
+		{"Simple", Amount{Dollars: 1, Cents: 00}, Amount{Dollars: 0, Cents: 29}, Amount{Dollars: 0, Cents: 71}},
+		{"CentRollover", Amount{Dollars: 1, Cents: 99}, Amount{Dollars: 5, Cents: 2}, Amount{Dollars: -3, Cents: -3}},
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			total, err := test.a1.Sub(test.a2)
-			if err != nil && !test.shouldError {
-				t.Errorf("operation failed with: %s", err.Error())
-			} else if err == nil && test.shouldError {
-				t.Errorf("operation should have failed but didn't")
-			} else if err != nil && test.shouldError {
-				return
-			}
+			total := test.a1.Sub(test.a2)
 			if !reflect.DeepEqual(total, test.expected) {
 				t.Errorf("Expected: %#v, got: %#v", test.expected, total)
 			}

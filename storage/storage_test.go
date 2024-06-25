@@ -1,26 +1,24 @@
 package storage
 
 import (
+	"auction/auction"
 	"auction/currency"
-	"cmp"
 	"reflect"
-	"slices"
 	"testing"
 )
 
 type storageTests struct {
-	// Make this more generic later
 	storeFn func() BidStorer
 	t       *testing.T
 }
 
-// Add a test for duplicate users
-// Add a test for user not found
 func (g *storageTests) Run() {
 	tests := map[string]func(t *testing.T, store BidStorer){
 		"Test Set Get":          testSetGet,
 		"Test Set Get Multiple": testSetGetMultiple,
 		"Test Get All":          testSetGetAll,
+		"Test Duplicate Bid":    testDuplicateBidder,
+		"Test Bidder Not Found": testBidderNotFound,
 	}
 	for name, test := range tests {
 		g.t.Run(name, func(t *testing.T) {
@@ -30,8 +28,8 @@ func (g *storageTests) Run() {
 }
 
 func testSetGet(t *testing.T, store BidStorer) {
-	expBid := Bid{
-		Bidder: Bidder("mockBidder"),
+	expBid := auction.Bid{
+		Bidder: auction.Bidder("mockBidder"),
 		StartingBid: currency.Amount{
 			Dollars: 1,
 			Cents:   20,
@@ -62,9 +60,9 @@ func testSetGet(t *testing.T, store BidStorer) {
 }
 
 func testSetGetMultiple(t *testing.T, store BidStorer) {
-	expBids := []Bid{
+	expBids := []auction.Bid{
 		{
-			Bidder: Bidder("mockBidder"),
+			Bidder: auction.Bidder("mockBidder"),
 			StartingBid: currency.Amount{
 				Dollars: 1,
 				Cents:   20,
@@ -80,7 +78,7 @@ func testSetGetMultiple(t *testing.T, store BidStorer) {
 			ID: 1,
 		},
 		{
-			Bidder: Bidder("mockBidder2"),
+			Bidder: auction.Bidder("mockBidder2"),
 			StartingBid: currency.Amount{
 				Dollars: 3,
 				Cents:   45,
@@ -116,9 +114,9 @@ func testSetGetMultiple(t *testing.T, store BidStorer) {
 }
 
 func testSetGetAll(t *testing.T, store BidStorer) {
-	expBids := []Bid{
-		{
-			Bidder: Bidder("mockBidder"),
+	expBids := auction.BidMap{
+		auction.Bidder("mockBidder"): {
+			Bidder: auction.Bidder("mockBidder"),
 			StartingBid: currency.Amount{
 				Dollars: 1,
 				Cents:   20,
@@ -133,8 +131,8 @@ func testSetGetAll(t *testing.T, store BidStorer) {
 			},
 			ID: 1,
 		},
-		{
-			Bidder: Bidder("mockBidder2"),
+		auction.Bidder("mockBidder2"): {
+			Bidder: auction.Bidder("mockBidder2"),
 			StartingBid: currency.Amount{
 				Dollars: 3,
 				Cents:   45,
@@ -149,8 +147,8 @@ func testSetGetAll(t *testing.T, store BidStorer) {
 			},
 			ID: 2,
 		},
-		{
-			Bidder: Bidder("mockBidder3"),
+		auction.Bidder("mockBidder3"): {
+			Bidder: auction.Bidder("mockBidder3"),
 			StartingBid: currency.Amount{
 				Dollars: 5,
 				Cents:   12,
@@ -182,16 +180,69 @@ func testSetGetAll(t *testing.T, store BidStorer) {
 		t.Fatalf("Expected %d bids, got: %d", len(expBids), len(recBids))
 	}
 
-	slices.SortFunc(expBids, func(a, b Bid) int {
-		return cmp.Compare(a.ID, b.ID)
-	})
-	slices.SortFunc(recBids, func(a, b Bid) int {
-		return cmp.Compare(a.ID, b.ID)
-	})
+	if !reflect.DeepEqual(expBids, recBids) {
+		t.Fatalf("Bids do not match. Expected:\n%#v\nGot:\n%#v", expBids, recBids)
+	}
+}
 
-	for i, recBid := range recBids {
-		if !reflect.DeepEqual(recBid, expBids[i]) {
-			t.Fatalf("Bids do not match. Expected:\n%#v\nGot:\n%#v", expBids[i], recBid)
-		}
+func testDuplicateBidder(t *testing.T, store BidStorer) {
+	bid := auction.Bid{
+		Bidder: auction.Bidder("mockBidder"),
+		StartingBid: currency.Amount{
+			Dollars: 1,
+			Cents:   20,
+		},
+		MaxBid: currency.Amount{
+			Dollars: 5,
+			Cents:   6,
+		},
+		Increment: currency.Amount{
+			Dollars: 0,
+			Cents:   20,
+		},
+		ID: 1,
+	}
+	err := store.SaveBid(bid)
+	if err != nil {
+		t.Fatalf("Failed to save bid: %s", err.Error())
+	}
+
+	err = store.SaveBid(bid)
+	if err == nil {
+		t.Fatalf("Expected a duplicate bid error and did not receive one")
+	}
+	if _, ok := err.(*BidderHasAlreadyBidError); !ok {
+		t.Fatalf("Expected a duplicate bid error and received a different error instead: %v", err)
+	}
+}
+
+func testBidderNotFound(t *testing.T, store BidStorer) {
+	expBid := auction.Bid{
+		Bidder: auction.Bidder("mockBidder"),
+		StartingBid: currency.Amount{
+			Dollars: 1,
+			Cents:   20,
+		},
+		MaxBid: currency.Amount{
+			Dollars: 5,
+			Cents:   6,
+		},
+		Increment: currency.Amount{
+			Dollars: 0,
+			Cents:   20,
+		},
+		ID: 1,
+	}
+	err := store.SaveBid(expBid)
+	if err != nil {
+		t.Fatalf("Failed to save bid: %s", err.Error())
+	}
+
+	_, err = store.GetBid("Wrong Bidder")
+	if err == nil {
+		t.Fatalf("Expected a bidder not found error and did not receive one")
+	}
+	if _, ok := err.(*BidderNotFoundError); !ok {
+		t.Fatalf("Expected a bidder not found error and received a different error instead: %v", err)
 	}
 }
