@@ -15,7 +15,7 @@ func (a Amount) String() string {
 	sign := ""
 	if a.Dollars < 0 || a.Cents < 0 {
 		sign = "-"
-		a.Abs()
+		a = a.Abs()
 	}
 	return fmt.Sprintf("%s$%d.%02d", sign, a.Dollars, a.Cents)
 }
@@ -83,13 +83,15 @@ func (a Amount) Greater(amt Amount) bool {
 	return false
 }
 
+// ParseAmount takes in a string dollar value and returns an Amount that is equivalent
 func ParseAmount(s string) (Amount, error) {
-	s = strings.TrimPrefix(s, "$")
 	sign := int64(1)
 	if strings.HasPrefix(s, "-") {
 		sign = -1
 		s = strings.TrimPrefix(s, "-")
 	}
+
+	s = strings.TrimPrefix(s, "$")
 
 	parts := strings.Split(s, ".")
 	if len(parts) > 2 {

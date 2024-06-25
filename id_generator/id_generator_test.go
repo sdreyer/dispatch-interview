@@ -6,7 +6,6 @@ import (
 )
 
 type generatorTests struct {
-	// Make this more generic later
 	generatorFn func() IDGenerator
 	t           *testing.T
 }

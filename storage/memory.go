@@ -5,19 +5,21 @@ import (
 	"sync"
 )
 
-type MemoryStorage struct {
+type memoryBidStorage struct {
 	bids map[auction.Bidder]auction.Bid
 	mtx  *sync.Mutex
 }
 
 func NewMemoryBidStorage() BidStorer {
-	return &MemoryStorage{
+	return &memoryBidStorage{
 		bids: map[auction.Bidder]auction.Bid{},
 		mtx:  &sync.Mutex{},
 	}
 }
 
-func (m MemoryStorage) SaveBid(bid auction.Bid) error {
+// SaveBid is a concurrency safe save operation. This is so that if SaveBid and GetBid are called simultaneously
+// then it does not result in a concurrent read/write panic and so that GetBid always returns the true set of bids.
+func (m memoryBidStorage) SaveBid(bid auction.Bid) error {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 	if _, ok := m.bids[bid.Bidder]; ok {
@@ -27,7 +29,7 @@ func (m MemoryStorage) SaveBid(bid auction.Bid) error {
 	return nil
 }
 
-func (m MemoryStorage) GetBid(bidder auction.Bidder) (auction.Bid, error) {
+func (m memoryBidStorage) GetBid(bidder auction.Bidder) (auction.Bid, error) {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 	if bid, ok := m.bids[bidder]; ok {
@@ -37,8 +39,10 @@ func (m MemoryStorage) GetBid(bidder auction.Bidder) (auction.Bid, error) {
 	}
 }
 
-// Maybe turn this into an iterator later
-func (m MemoryStorage) GetAllBids() (auction.BidMap, error) {
+// GetAllBids returns all bids. It currently returns a BidMap instead of a slice to make lookups easier.
+// This implementation assumes we are working with a small set of bids. If there were a significant amount of bids
+// expected, this would likely work better returning an iterator and using GetBid to lookup specific bidders instead.
+func (m memoryBidStorage) GetAllBids() (auction.BidMap, error) {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 	return m.bids, nil

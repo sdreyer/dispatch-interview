@@ -25,7 +25,7 @@ func TestManager(t *testing.T) {
 }
 
 func TestInitializeCalculation(t *testing.T) {
-	manager := &DefaultBidManager{
+	manager := &defaultBidManager{
 		idGenerator: id_generator.NewMemoryIDGenerator(),
 		storage:     storage.NewMemoryBidStorage(),
 	}
@@ -66,7 +66,7 @@ func TestInitializeCalculation(t *testing.T) {
 }
 
 func TestCalculateBids(t *testing.T) {
-	manager := &DefaultBidManager{
+	manager := &defaultBidManager{
 		idGenerator: id_generator.NewMemoryIDGenerator(),
 		storage:     storage.NewMemoryBidStorage(),
 	}
@@ -114,7 +114,7 @@ func TestCalculateBids(t *testing.T) {
 }
 
 func TestCurrentWinner(t *testing.T) {
-	manager := &DefaultBidManager{
+	manager := &defaultBidManager{
 		idGenerator: id_generator.NewMemoryIDGenerator(),
 		storage:     storage.NewMemoryBidStorage(),
 	}
@@ -169,7 +169,7 @@ func TestCurrentWinner(t *testing.T) {
 }
 
 func TestIfFinished(t *testing.T) {
-	manager := &DefaultBidManager{
+	manager := &defaultBidManager{
 		idGenerator: id_generator.NewMemoryIDGenerator(),
 		storage:     storage.NewMemoryBidStorage(),
 	}
